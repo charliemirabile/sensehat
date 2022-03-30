@@ -7,8 +7,8 @@ static void set(FILE *fp, uint8_t rgb[3])
 {
 	rewind(fp);
 	for(size_t i = 0; i < 8; ++i)
-		for(size_t c = 0; c < 3; ++c)
-			for(size_t j = 0; j < 8; ++j)
+		for(size_t j = 0; j < 8; ++j)
+			for(size_t c = 0; c < 3; ++c)
 				fputc(rgb[c], fp);
 	fflush(fp);
 }

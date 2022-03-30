@@ -9,7 +9,7 @@
 #include <fcntl.h>
 #include <err.h>
 
-static uint8_t screen[8][3][8];
+static uint8_t screen[8][8][3];
 
 static int disp_fd, joy_fd;
 
@@ -64,9 +64,9 @@ Point;
 
 static void clear_pixel(Point loc)
 {
-	screen[loc.y][0][loc.x]=0;
-	screen[loc.y][1][loc.x]=0;
-	screen[loc.y][2][loc.x]=0;
+	screen[loc.y][loc.x][0]=0;
+	screen[loc.y][loc.x][1]=0;
+	screen[loc.y][loc.x][2]=0;
 }
 
 typedef union
@@ -86,9 +86,9 @@ static Color get_random_color(void)
 
 static void set_pixel(Point loc, Color col)
 {
-	screen[loc.y][0][loc.x]=col.r;
-	screen[loc.y][1][loc.x]=col.g;
-	screen[loc.y][2][loc.x]=col.b;
+	screen[loc.y][loc.x][0]=col.r;
+	screen[loc.y][loc.x][1]=col.g;
+	screen[loc.y][loc.x][2]=col.b;
 }
 
 typedef enum
