@@ -26,26 +26,33 @@
 #include <linux/property.h>
 
 #define DISPLAY_SMB_REG 0x00
-#define VMEM_SIZE 192
 #define RGB_555_MASK 0x1f
+#define NUM_LEDS 8
+#define NUM_CHANNELS 3
 
 struct sensehat_display {
 	struct platform_device *pdev;
 	struct miscdevice mdev;
 	struct mutex rw_mtx;
-	u8 vmem[VMEM_SIZE];
+	u8 vmem[NUM_LEDS][NUM_LEDS][NUM_CHANNELS];
 	struct regmap *regmap;
 };
+
+#define VMEM_SIZE sizeof_field(struct sensehat_display, vmem)
 
 
 static int sensehat_update_display(struct sensehat_display *display)
 {
-	int i, ret;
+	int i, j, k, ret;
+	u8 buff[NUM_LEDS][NUM_CHANNELS][NUM_LEDS];
 
-	for (i = 0; i < VMEM_SIZE; ++i)
-		display->vmem[i] &= RGB_555_MASK;
+	for (i = 0; i < NUM_LEDS; ++i)
+		for (j = 0; j < NUM_LEDS; ++j)
+			for (k = 0; k < NUM_CHANNELS; ++k)
+				buff[i][k][j] =
+					display->vmem[i][j][k] & RGB_555_MASK;
 
-	ret = regmap_bulk_write(display->regmap, DISPLAY_SMB_REG, display->vmem,
+	ret = regmap_bulk_write(display->regmap, DISPLAY_SMB_REG, buff,
 				VMEM_SIZE);
 	if (ret < 0)
 		dev_err(&display->pdev->dev,
@@ -72,7 +79,7 @@ static ssize_t sensehat_display_read(struct file *filp, char __user *buf,
 
 	if (mutex_lock_interruptible(&sensehat_display->rw_mtx))
 		return -ERESTARTSYS;
-	if (copy_to_user(buf, *f_pos + sensehat_display->vmem, count))
+	if (copy_to_user(buf, *f_pos + (u8 *)sensehat_display->vmem, count))
 		goto out;
 	*f_pos += count;
 	ret = count;
@@ -94,7 +101,7 @@ static ssize_t sensehat_display_write(struct file *filp, const char __user *buf,
 
 	if (mutex_lock_interruptible(&sensehat_display->rw_mtx))
 		return -ERESTARTSYS;
-	if (copy_from_user(*f_pos + sensehat_display->vmem, buf, count))
+	if (copy_from_user(*f_pos + (u8 *)sensehat_display->vmem, buf, count))
 		goto out;
 	ret = sensehat_update_display(sensehat_display);
 	if (ret < 0) {
